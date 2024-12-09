@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/L.Control.Locate.min.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/L.Control.Locate.min.js"></script>
+        <script src="js/multi-style-layer.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="data/Coucheissuedelajointure_1.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+            highlightLayer.openPopup();
+        }
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        })
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        L.control.locate({locateOptions: {maxZoom: 19}}).addTo(map);
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+            if (bounds_group.getLayers().length) {
+                map.fitBounds(bounds_group.getBounds());
+            }
+        }
+        map.createPane('pane_GoogleSatellite_0');
+        map.getPane('pane_GoogleSatellite_0').style.zIndex = 400;
+        var layer_GoogleSatellite_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleSatellite_0',
+            opacity: 0.256,
+            attribution: '<a href="https://www.google.at/permissions/geoguidelines/attr-guide.html">Map data ©2015 Google</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 20
+        });
+        layer_GoogleSatellite_0;
+        map.addLayer(layer_GoogleSatellite_0);
+        function pop_Coucheissuedelajointure_1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">PROTEC_PLU</th>\
+                        <td class="visible-with-data" id="PROTEC_PLU">' + (feature.properties['PROTEC_PLU'] !== null ? autolinker.link(feature.properties['PROTEC_PLU'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PERTINENCE</th>\
+                        <td>' + (feature.properties['PERTINENCE'] !== null ? autolinker.link(feature.properties['PERTINENCE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PHOTOS</th>\
+                        <td class="visible-with-data" id="PHOTOS">' + (feature.properties['PHOTOS'] !== null ? '<img src="images/' + String(feature.properties['PHOTOS']).replace(/[\\\/:]/g, '_').trim() + '">' : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Coucheissuedelajointure_1_0(feature) {
+            switch(String(feature.properties['PERTINENCE'])) {
+                case '3':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(240,19,8,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '2':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(237,118,48,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '1+':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(235,223,64,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '1':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(235,237,64,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '0':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(195,226,227,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Séquence urbaine':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(62,88,175,1.0)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(187,186,198,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '2+':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(237,118,48,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '3+':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(240,19,8,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Séquence urbaine 1':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(235,223,64,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Séquence urbaine 2':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(237,118,48,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Chaumière':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(183,226,156,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Séquence urbaine 1+':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(235,237,64,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        function style_Coucheissuedelajointure_1_1(feature) {
+            switch(String(feature.properties['PERTINENCE'])) {
+                case '3':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(240,19,8,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case '2':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(237,118,48,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case '1+':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case '1':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(235,237,64,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case '0':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(195,226,227,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Séquence urbaine':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(62,88,175,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(187,186,198,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case '2+':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case '3+':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(4,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Séquence urbaine 1':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(31,8,235,1.0)',
+                dashArray: '4.0,2.0',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Séquence urbaine 2':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(6,21,237,1.0)',
+                dashArray: '4.0,2.0',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Chaumière':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(183,226,156,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Séquence urbaine 1+':
+                    return {
+                pane: 'pane_Coucheissuedelajointure_1',
+                opacity: 1,
+                color: 'rgba(12,0,237,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_Coucheissuedelajointure_1');
+        map.getPane('pane_Coucheissuedelajointure_1').style.zIndex = 401;
+        map.getPane('pane_Coucheissuedelajointure_1').style['mix-blend-mode'] = 'normal';
+        var layer_Coucheissuedelajointure_1 = new L.geoJson.multiStyle(json_Coucheissuedelajointure_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Coucheissuedelajointure_1',
+            layerName: 'layer_Coucheissuedelajointure_1',
+            pane: 'pane_Coucheissuedelajointure_1',
+            onEachFeature: pop_Coucheissuedelajointure_1,
+            styles: [style_Coucheissuedelajointure_1_0,style_Coucheissuedelajointure_1_1,]
+        });
+        bounds_group.addLayer(layer_Coucheissuedelajointure_1);
+        map.addLayer(layer_Coucheissuedelajointure_1);
+        var baseMaps = {};
+        var overlaysTree = [
+            {label: 'Couche issue de la jointure<br /><table><tr><td style="text-align: center;"><img src="legend/Coucheissuedelajointure_1_30.png" /></td><td>3</td></tr><tr><td style="text-align: center;"><img src="legend/Coucheissuedelajointure_1_21.png" /></td><td>2</td></tr><tr><td style="text-align: center;"><img src="legend/Coucheissuedelajointure_1_12.png" /></td><td>1+</td></tr><tr><td style="text-align: center;"><img src="legend/Coucheissuedelajointure_1_13.png" /></td><td>1</td></tr><tr><td style="text-align: center;"><img src="legend/Coucheissuedelajointure_1_04.png" /></td><td>0</td></tr><tr><td style="text-align: center;"><img src="legend/Coucheissuedelajointure_1_Séquenceurbaine5.png" /></td><td>(Séquence urbaine)</td></tr><tr><td style="text-align: center;"><img src="legend/Coucheissuedelajointure_1_6.png" /></td><td></td></tr><tr><td style="text-align: center;"><img src="legend/Coucheissuedelajointure_1_27.png" /></td><td>2+</td></tr><tr><td style="text-align: center;"><img src="legend/Coucheissuedelajointure_1_38.png" /></td><td>3+</td></tr><tr><td style="text-align: center;"><img src="legend/Coucheissuedelajointure_1_Séquenceurbaine19.png" /></td><td>Séquence urbaine 1</td></tr><tr><td style="text-align: center;"><img src="legend/Coucheissuedelajointure_1_Séquenceurbaine210.png" /></td><td>Séquence urbaine 2</td></tr><tr><td style="text-align: center;"><img src="legend/Coucheissuedelajointure_1_Chaumière11.png" /></td><td>Chaumière</td></tr><tr><td style="text-align: center;"><img src="legend/Coucheissuedelajointure_1_Séquenceurbaine112.png" /></td><td>Séquence urbaine 1+</td></tr></table>', layer: layer_Coucheissuedelajointure_1},
+            {label: "Google Satellite", layer: layer_GoogleSatellite_0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: true,
+        });
+        lay.addTo(map);
+        setBounds();
+        </script>
+    </body>
+</html>
